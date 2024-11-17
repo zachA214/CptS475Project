@@ -1,6 +1,11 @@
 import torch
 import pandas as pd
 from transformers import BertTokenizer, BertForMaskedLM, Trainer, TrainingArguments 
+from datasets import Dataset
+
+import logging
+logging.basicConfig(level=logging.DEBUG)
+
 
 
 modelName = 'bert-base-uncased'#name of the model
@@ -13,6 +18,11 @@ data = pd.read_csv('Phishing_validation_emails.csv')
 #Putting into a dataframe, then filtering to only have the phishing emails
 df = pd.DataFrame(data)
 filtered = df[df['Email Type'] == 'Phishing Email']
-
 #receiving only the first column (so only the emails) and making that our main dataset
-phishingData = filtered.iloc[:,0]
+#filtered = filtered[['Email Text']]
+
+#making them dicts 
+dicts = filtered.to_dict(orient = 'records')
+
+#Making it a dataset again so it can still be trained
+phishingData = Dataset.from_pandas(pd.DataFrame(dicts))
