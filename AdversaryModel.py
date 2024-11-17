@@ -1,10 +1,18 @@
 import torch
+import pandas as pd
 from transformers import BertTokenizer, BertForMaskedLM, Trainer, TrainingArguments 
-from datasets import load_dataset
 
-model_name = 'bert-base-uncased'#name of the model
-model = BertForMaskedLM.from_pretrained(model_name)#model
-tok = BertTokenizer.from_pretrained(model_name)#tokenizer
 
-data = load_dataset("Plishing_validation_emails.csv")
+modelName = 'bert-base-uncased'#name of the model
+model = BertForMaskedLM.from_pretrained(modelName)#model
+tok = BertTokenizer.from_pretrained(modelName)#tokenizer
 
+#loading the dataset
+data = pd.read_csv('Phishing_validation_emails.csv')
+
+#Putting into a dataframe, then filtering to only have the phishing emails
+df = pd.DataFrame(data)
+filtered = df[df['Email Type'] == 'Phishing Email']
+
+#receiving only the first column (so only the emails) and making that our main dataset
+phishingData = filtered.iloc[:,0]
