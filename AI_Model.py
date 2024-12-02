@@ -6,6 +6,7 @@ from transformers import DataCollatorWithPadding
 import evaluate
 import pandas as pd
 import numpy as np
+import torch
 #import tensorflow as tf
 #import tensorflow_hub as hub
 #import tensorflow_text as text
@@ -83,6 +84,32 @@ trainer = Trainer(
 )
 
 trainer.train()
+
+
+"""
+#Testing on input emails
+email_text = "insert email here"
+
+inputs = tokenizer(email_text, return_tensors="pt", truncation=True, padding=True)
+
+with torch.no_grad():
+    outputs = model(**inputs)
+    logits = outputs.logits
+    predictions = torch.softmax(logits, dim=1)
+
+predicted_class = torch.argmax(predictions, dim=1).item
+probabilities = predictions[0].numpy()
+predicted_label = id2label[predicted_class]
+
+print(f"Predicted Label: {predicted_label}")
+print(f"Probability: {probabilities}")
+"""
+
+
+
+
+
+
 
 """
 from transformers import GPT2Tokenizer, GPT2ForSequenceClassification, Trainer, TrainingArguments
