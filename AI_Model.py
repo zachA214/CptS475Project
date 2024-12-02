@@ -2,7 +2,7 @@
 
 from datasets import Dataset, DatasetDict
 from transformers import BertTokenizer, BertForMaskedLM, Trainer, TrainingArguments, AutoTokenizer, AutoModelForSequenceClassification
-from transformers import DataCollatorWithPadding
+from transformers import DataCollatorWithPadding, DefaultDataCollator
 import evaluate
 import pandas as pd
 import numpy as np
@@ -43,7 +43,12 @@ def preprocess_function (examples):
 
 tokenized_data = dataset_dict.map(preprocess_function,batched=True)
 
-data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+#added
+tokenized_data = tokenized_data.add_column("labels", dataset_dict["train"]["labels"])
+#added
+
+#data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
+data_collator = DefaultDataCollator()
 
 accuracy = evaluate.load("accuracy")
 auc_score = evaluate.load("roc_auc")
