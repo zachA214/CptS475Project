@@ -14,6 +14,8 @@ from sklearn.model_selection import train_test_split
 
 
 dataset = pd.read_csv('Phishing_validation_emails.csv')
+label_mapping = {"Safe Email": 0, "Phishing Email": 1} 
+dataset["Email Type"] = dataset["Email Type"].map(label_mapping)
 
 #edits
 train_df, test_df = train_test_split(dataset)
@@ -41,10 +43,17 @@ for name, param in model.base_model.named_parameters():
 def preprocess_function (examples):
     return tokenizer(examples["Email Text"], truncation=True,padding=True)
 
-tokenized_data = dataset_dict.map(preprocess_function,batched=True)
+
+tokenized_train_dataset = dataset_dict["train"].map(preprocess_function, batched=True) 
+tokenized_test_dataset = dataset_dict["test"].map(preprocess_function, batched=True)
+
+tokenized_train_dataset = tokenized_train_dataset.add_column("labels", train_dataset["Email Type"])
+tokenized_test_dataset = tokenized_test_dataset.add_column("labels", test_dataset["Email Type"])
+
+#tokenized_data = dataset_dict.map(preprocess_function,batched=True)
 
 #added
-tokenized_data = tokenized_data.add_column("labels", dataset_dict["train"]["labels"])
+#tokenized_data = tokenized_data.cast_column("Email Type", dataset_dict["train"]["Email Type"])
 #added
 
 #data_collator = DataCollatorWithPadding(tokenizer=tokenizer)
@@ -55,10 +64,11 @@ auc_score = evaluate.load("roc_auc")
 
 def compute_metrics(eval_pred):
     predictions, labels = eval_pred
-    probabilities = np.exp(predictions) / np.exp(predictions).sum(-1, keepdims = True)
-    positive_class_probs = probabilities[:1]
+    #probabilities = np.exp(predictions) / np.exp(predictions).sum(-1, keepdims = True)
+    probabilities = torch.softmax(torch.tensor(predictions), dim=1).numpy()
+    positive_class_probs = probabilities[:,1]
     auc=np.round(auc_score.compute(prediction_scores=positive_class_probs, references=labels)['roc_auc'],3)
-    predicted_classes = np.argmax(predictions, axis=1)
+    predicted_classes = np.argmax(probabilities, axis=1)
     acc=np.round(accuracy.compute(predictions=predicted_classes, references=labels)['accuracy'],3)
     return{"Accuracy": acc, "AUC": auc}
 
@@ -81,8 +91,8 @@ training_args = TrainingArguments(
 trainer = Trainer(
     model=model,
     args = training_args,
-    train_dataset=tokenized_data["train"],
-    eval_dataset=tokenized_data["test"],
+    train_dataset=tokenized_train_dataset,
+    eval_dataset=tokenized_test_dataset,
     tokenizer = tokenizer,
     data_collator=data_collator,
     compute_metrics=compute_metrics,
@@ -90,25 +100,32 @@ trainer = Trainer(
 
 trainer.train()
 
-
-"""
 #Testing on input emails
-email_text = "insert email here"
 
-inputs = tokenizer(email_text, return_tensors="pt", truncation=True, padding=True)
+email_text = "Thank you for your order. Your order will ship out soon. Click here to claim."
 
+inputs = tokenizer(email_text, return_tensors="pt", truncation=True, padding=True)   
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model.to(device)
+inputs = {key: value.to(device) for key, value in inputs.items()}
 with torch.no_grad():
     outputs = model(**inputs)
     logits = outputs.logits
     predictions = torch.softmax(logits, dim=1)
 
-predicted_class = torch.argmax(predictions, dim=1).item
-probabilities = predictions[0].numpy()
+    
+predicted_class = torch.argmax(predictions, dim=1).item()
+probabilities = predictions[0].cpu().numpy() 
 predicted_label = id2label[predicted_class]
 
 print(f"Predicted Label: {predicted_label}")
-print(f"Probability: {probabilities}")
-"""
+#print(f"Probability: {probabilities}")
+if "Safe" in predicted_label:
+    print(f"Probability: {probabilities[0]}")
+else:
+    print(f"Probability: {probabilities[1]}")
+
+
 
 
 
