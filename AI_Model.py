@@ -102,6 +102,14 @@ trainer.train()
 
 #Testing on input emails
 
+# What to do:
+# - File processing in python to read the data
+# - Create a seperate csv for testing
+# - Run in batches of 10 = 1 trial
+# - Pull 50 pieces of data from Phishing_validation_emails.csv to new csv
+# - Pull all data from genereated data into new csv
+
+
 email_text = "Thank you for your order. Your order will ship out soon. Click here to claim."
 
 inputs = tokenizer(email_text, return_tensors="pt", truncation=True, padding=True)   
