@@ -40,8 +40,12 @@ summ = for_graph %>%
   group_by(trial) %>%
   summarise(total = sum(success) / 10)
 print(summ)
+#The final three trials were when we tested the model with data directly from the training dataset to see how accurate it became, so when graphing, we will omit those.
 summ = summ[1:6,]
+```
 
+
+```{R graph}
 ggplot(summ, aes(x = trial, y = total)) + geom_line() + geom_point() + 
   labs(title = "Success per Trial", x = "Trial", y = "Success Rate")
 ```
