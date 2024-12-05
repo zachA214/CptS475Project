@@ -40,8 +40,8 @@ for name, param in model.base_model.named_parameters():
     if "pooler" in name:
         param.requires_grad = True
     
-def preprocess_function (examples):
-    return tokenizer(examples["Email Text"], truncation=True,padding=True)
+def preprocess_function(examples): 
+    return tokenizer(examples["Email Text"], padding='max_length', truncation=True, max_length=95)
 
 
 tokenized_train_dataset = dataset_dict["train"].map(preprocess_function, batched=True) 
@@ -110,29 +110,34 @@ trainer.train()
 # - Pull all data from genereated data into new csv
 
 
-email_text = "Thank you for your order. Your order will ship out soon. Click here to claim."
+#email_texts = ["Thank you for your order. Your order will ship out soon. Click here to claim.", "Welcome to our program.", "Give me your credit card."]
 
-inputs = tokenizer(email_text, return_tensors="pt", truncation=True, padding=True)   
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.to(device)
-inputs = {key: value.to(device) for key, value in inputs.items()}
-with torch.no_grad():
-    outputs = model(**inputs)
-    logits = outputs.logits
-    predictions = torch.softmax(logits, dim=1)
+email_texts = open('trial_data.txt', 'r')
 
-    
-predicted_class = torch.argmax(predictions, dim=1).item()
-probabilities = predictions[0].cpu().numpy() 
-predicted_label = id2label[predicted_class]
+for email_text in email_texts:
+    inputs = tokenizer(email_text, return_tensors="pt", truncation=True, padding=True)   
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model.to(device)
+    inputs = {key: value.to(device) for key, value in inputs.items()}
+    with torch.no_grad():
+        outputs = model(**inputs)
+        logits = outputs.logits
+        predictions = torch.softmax(logits, dim=1)
 
-print(f"Predicted Label: {predicted_label}")
-#print(f"Probability: {probabilities}")
-if "Safe" in predicted_label:
-    print(f"Probability: {probabilities[0]}")
-else:
-    print(f"Probability: {probabilities[1]}")
+        
+    predicted_class = torch.argmax(predictions, dim=1).item()
+    probabilities = predictions[0].cpu().numpy() 
+    predicted_label = id2label[predicted_class]
 
+    print(f"Email: {email_text}")
+    print(f"Predicted Label: {predicted_label}")
+    #print(f"Probability: {probabilities}")
+    if "Safe" in predicted_label:
+        print(f"Probability: {probabilities[0]}")
+    else:
+        print(f"Probability: {probabilities[1]}")
+
+print("Finished all tasks   ")
 
 
 
