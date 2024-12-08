@@ -21,6 +21,7 @@ library(naivebayes)
 library(VGAM)
 library(nnet)
 library(glmnet)
+library(tidytext)
 ```
 
 ## R Markdown
@@ -41,7 +42,7 @@ summ = for_graph %>%
   summarise(total = sum(success) / 10)
 print(summ)
 #The final three trials were when we tested the model with data directly from the training dataset to see how accurate it became, so when graphing, we will omit those.
-summ = summ[1:6,]
+#summ = summ[1:6,]
 ```
 
 
@@ -49,3 +50,18 @@ summ = summ[1:6,]
 ggplot(summ, aes(x = trial, y = total)) + geom_line() + geom_point() + 
   labs(title = "Success per Trial", x = "Trial", y = "Success Rate")
 ```
+
+```{R freq table}
+emails = dataset %>% filter(expected.result == "Phishing")
+emails = emails %>% select(email.contents)
+tokenized = emails %>% unnest_tokens(word, email.contents)
+freq = tokenized %>% count(word, sort = TRUE)
+print(freq)
+freq = head(freq, 10)
+ggplot(freq, aes(x = reorder(word, -n), y = n)) +
+    geom_bar(stat = "identity") +
+    labs(title = "Word Frequency", x = "Words", y = "Frequency") +
+    theme_minimal() +
+    theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
